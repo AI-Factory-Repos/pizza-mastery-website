@@ -1,39 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-
-const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, uploadDir),
-  filename: (req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
-});
-
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowed = /jpeg|jpg|png|webp/;
-    const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-    const mime = allowed.test(file.mimetype);
-    if (ext && mime) return cb(null, true);
-    cb(new Error('Only image files are allowed'));
-  },
-});
+const { upload } = require('../config/upload');
+const { optimizeImage, buildImageUrl } = require('../utils/imageProcessor');
 
 // POST /api/upload
-router.post('/', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const image_url = `/uploads/${req.file.filename}`;
-  res.status(201).json({ image_url });
+// Accepts a single image file under field name "image"
+router.post('/', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided.' });
+    }
+
+    const originalPath = req.file.path;
+    const optimizedPath = await optimizeImage(originalPath);
+    const filename = path.basename(optimizedPath);
+    const image_url = buildImageUrl(filename);
+
+    return res.status(200).json({ image_url });
+  } catch (err) {
+    console.error('Upload error:', err);
+    return res.status(500).json({ error: 'Image upload failed.', details: err.message });
+  }
+});
+
+// Multer error handling middleware
+router.use((err, req, res, next) => {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'File too large.' });
+  }
+  if (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  next();
 });
 
 module.exports = router;
