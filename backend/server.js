@@ -1,6 +1,5 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
 
@@ -9,26 +8,20 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// Middleware
-app.use(cors());
+// Body parsing
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 
-// Static file serving for frontend and uploads
-app.use(express.static(path.join(__dirname, '..', 'frontend')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve uploaded images as static files
+const UPLOAD_DIR = process.env.UPLOAD_DIR || 'uploads';
+app.use(`/${UPLOAD_DIR}`, express.static(path.join(__dirname, UPLOAD_DIR)));
 
 // Routes
-app.use('/api', require('./routes/health'));
+app.use('/api/health', require('./routes/health'));
 app.use('/api/recipes', require('./routes/recipes'));
 app.use('/api/upload', require('./routes/upload'));
 
-// Fallback: serve frontend for non-API routes
-app.get(/^(?!\/api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'frontend', 'index.html'));
-});
-
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
