@@ -12,7 +12,7 @@
         return await res.json();
       } catch (e) {
         if (i === retries - 1) throw e;
-        await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        await new Promise(r => setTimeout(r, 600 * (i + 1)));
       }
     }
   }
@@ -38,9 +38,17 @@
     return str.replace(/_/g, ' ').replace(/-/g, ' ');
   }
 
+  function handleImgError(img, name) {
+    img.onerror = null;
+    const placeholder = document.createElement('div');
+    placeholder.className = 'recipe-card-img-placeholder';
+    placeholder.textContent = '🍕';
+    img.parentNode.replaceChild(placeholder, img);
+  }
+
   function renderCard(r) {
     const imgHtml = r.image_url
-      ? `<img class="recipe-card-img" src="${r.image_url}" alt="${r.name}" loading="lazy">`
+      ? `<img class="recipe-card-img" src="${r.image_url}" alt="${r.name}" loading="lazy" onerror="this.onerror=null;const p=document.createElement('div');p.className='recipe-card-img-placeholder';p.textContent='🍕';this.parentNode.replaceChild(p,this);">`
       : `<div class="recipe-card-img-placeholder">🍕</div>`;
     return `
       <a class="recipe-card" href="recipe.html?id=${encodeURIComponent(r.id)}">
@@ -64,9 +72,29 @@
     grid.innerHTML = Array(count).fill('<div class="skeleton-card"></div>').join('');
   }
 
+  function showLoading() {
+    grid.innerHTML = `
+      <div class="loading-spinner" style="grid-column:1/-1">
+        <span class="loading-spinner__icon">🍕</span>
+        <span class="loading-spinner__flame">🔥</span>
+        <p class="loading-spinner__text">Firing up the oven…</p>
+      </div>`;
+  }
+
+  function showError(retryFn) {
+    errorMsg.innerHTML = `
+      <div class="error-msg__icon">🫕</div>
+      <div class="error-msg__title">Mamma mia! Something went wrong.</div>
+      <p class="error-msg__text">Could not load recipes. Please check your connection and try again.</p>
+      <button class="retry-btn" id="retry-btn">🔄 Retry</button>`;
+    errorMsg.classList.remove('hidden');
+    document.getElementById('retry-btn').addEventListener('click', retryFn);
+  }
+
   async function loadRecipes() {
     showSkeletons();
     errorMsg.classList.add('hidden');
+    errorMsg.innerHTML = '';
     try {
       const recipes = await fetchWithRetry(`/api/recipes${buildQueryString()}`);
       if (!recipes.length) {
@@ -76,8 +104,7 @@
       grid.innerHTML = recipes.map(renderCard).join('');
     } catch (e) {
       grid.innerHTML = '';
-      errorMsg.textContent = 'Could not load recipes. Please check your connection and try again.';
-      errorMsg.classList.remove('hidden');
+      showError(loadRecipes);
     }
   }
 
