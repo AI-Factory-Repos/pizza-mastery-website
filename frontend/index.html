@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pizza Mastery — Authentic Italian Recipes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="nav-logo">🍕 Pizza Mastery</a>
+      <ul class="nav-links">
+        <li><a href="/" class="nav-link active">Home</a></li>
+        <li><a href="compare.html?type=margherita" class="nav-link">Compare</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content">
+        <h1 class="hero-title">Authentic Italian Pizza Mastery</h1>
+        <p class="hero-subtitle">From the wood-fired ovens of Naples to your kitchen</p>
+      </div>
+    </section>
+
+    <section class="filters-section">
+      <div class="container">
+        <div class="filters">
+          <button class="filter-btn active" data-type="">All Pizzas</button>
+          <button class="filter-btn" data-type="margherita">Margherita</button>
+          <button class="filter-btn" data-type="pepperoni">Pepperoni</button>
+          <button class="filter-btn" data-type="bbq_chicken">BBQ Chicken</button>
+        </div>
+        <div class="style-filters">
+          <button class="style-btn active" data-style="">All Styles</button>
+          <button class="style-btn" data-style="ny-style">NY Style</button>
+          <button class="style-btn" data-style="deep-dish">Deep Dish</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="recipes-section">
+      <div class="container">
+        <div id="recipes-grid" class="recipes-grid">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+          <div class="skeleton-card"></div>
+        </div>
+        <div id="error-msg" class="error-msg hidden"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>🔥 Crafted with passion &amp; wood-fired tradition</p>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
