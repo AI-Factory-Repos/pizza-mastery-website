@@ -19,22 +19,37 @@
     }
   }
 
+  function formatStyle(style) {
+    if (!style) return '\u2014';
+    return style.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  function difficultyClass(d) {
+    if (!d) return '';
+    const l = d.toLowerCase();
+    if (l === 'easy') return 'difficulty-easy';
+    if (l === 'hard') return 'difficulty-hard';
+    return 'difficulty-medium';
+  }
+
   function renderCompareCard(r) {
     const imgHtml = r.image_url
       ? `<img class="compare-card-img" src="${r.image_url}" alt="${r.name}" loading="lazy">`
-      : `<div class="compare-card-img" style="display:flex;align-items:center;justify-content:center;font-size:4rem;background:var(--clr-smoke)">🍕</div>`;
+      : `<div class="compare-card-img compare-card-img--placeholder">\uD83C\uDF55</div>`;
     return `
       <div class="compare-card">
         ${imgHtml}
         <div class="compare-card-body">
           <h2 class="compare-card-title">${r.name}</h2>
           <table class="compare-table">
-            <tr><td>Style</td><td>${r.style || '—'}</td></tr>
-            <tr><td>Prep Time</td><td>${r.prep_time ?? '?'} min</td></tr>
-            <tr><td>Cook Time</td><td>${r.cook_time ?? '?'} min</td></tr>
-            <tr><td>Difficulty</td><td>${r.difficulty || '—'}</td></tr>
+            <tbody>
+              <tr><td>Style</td><td>${formatStyle(r.style)}</td></tr>
+              <tr><td>Prep Time</td><td>${r.prep_time ?? '?'} min</td></tr>
+              <tr><td>Cook Time</td><td>${r.cook_time ?? '?'} min</td></tr>
+              <tr><td>Difficulty</td><td class="${difficultyClass(r.difficulty)}">${r.difficulty || '\u2014'}</td></tr>
+            </tbody>
           </table>
-          <a href="recipe.html?id=${encodeURIComponent(r.id)}" class="view-recipe-link">View Recipe →</a>
+          <a href="recipe.html?id=${encodeURIComponent(r.id)}" class="view-recipe-link">View Full Recipe \u2192</a>
         </div>
       </div>`;
   }
@@ -46,13 +61,13 @@
     try {
       const recipes = await fetchWithRetry(`/api/recipes?pizza_type=${encodeURIComponent(type)}`);
       if (!recipes.length) {
-        grid.innerHTML = '<p style="color:var(--clr-ash);grid-column:1/-1;text-align:center;padding:2rem">No recipes found for this type.</p>';
+        grid.innerHTML = '<p class="no-results">No recipes found for this pizza type.</p>';
         return;
       }
       grid.innerHTML = recipes.slice(0, 2).map(renderCompareCard).join('');
     } catch (e) {
       grid.innerHTML = '';
-      errorMsg.textContent = 'Could not load comparison. Please try again.';
+      errorMsg.textContent = 'Could not load comparison. Please check your connection and try again.';
       errorMsg.classList.remove('hidden');
     }
   }
