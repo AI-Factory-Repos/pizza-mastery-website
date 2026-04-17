@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Compare — Pizza Mastery</title>
+  <title>Compare Recipes — Pizza Mastery</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
@@ -20,9 +20,15 @@
   </header>
 
   <main>
+    <section class="hero hero--compact">
+      <div class="hero-content">
+        <h1 class="hero-title">Side-by-Side Comparison</h1>
+        <p class="hero-subtitle">Same pizza, different style — discover the difference</p>
+      </div>
+    </section>
+
     <div class="container">
       <div class="compare-header">
-        <h1 class="page-title">Side-by-Side Comparison</h1>
         <div class="type-selector">
           <label for="type-select">Pizza Type:</label>
           <select id="type-select" class="type-select">
@@ -32,10 +38,14 @@
           </select>
         </div>
       </div>
+
       <div id="compare-grid" class="compare-grid">
         <div class="skeleton-card"></div>
         <div class="skeleton-card"></div>
       </div>
+
+      <div id="ingredients-comparison" class="ingredients-comparison hidden"></div>
+
       <div id="error-msg" class="error-msg hidden"></div>
     </div>
   </main>
