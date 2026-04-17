@@ -33,13 +33,83 @@
   }
 
   function formatStyle(style) {
-    if (!style) return '—';
+    if (!style) return '\u2014';
     return style.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }
 
   function formatType(type) {
-    if (!type) return '—';
+    if (!type) return '\u2014';
     return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  function initStepAccordion(container) {
+    const stepItems = container.querySelectorAll('.step-item');
+    const expandAllBtn = container.querySelector('.steps-expand-all');
+    let allExpanded = false;
+
+    function collapseAll() {
+      stepItems.forEach(item => {
+        item.classList.remove('expanded');
+        const toggle = item.querySelector('.step-toggle');
+        const body = item.querySelector('.step-body');
+        if (toggle) toggle.textContent = '\uFF0B';
+        if (body) body.style.maxHeight = '0';
+      });
+    }
+
+    function expandItem(item) {
+      const body = item.querySelector('.step-body');
+      const toggle = item.querySelector('.step-toggle');
+      item.classList.add('expanded');
+      if (toggle) toggle.textContent = '\uFF0D';
+      if (body) body.style.maxHeight = body.scrollHeight + 'px';
+    }
+
+    function collapseItem(item) {
+      const body = item.querySelector('.step-body');
+      const toggle = item.querySelector('.step-toggle');
+      item.classList.remove('expanded');
+      if (toggle) toggle.textContent = '\uFF0B';
+      if (body) body.style.maxHeight = '0';
+    }
+
+    stepItems.forEach(item => {
+      const header = item.querySelector('.step-header');
+      const body = item.querySelector('.step-body');
+      // Ensure body starts collapsed
+      if (body) body.style.maxHeight = '0';
+
+      header.addEventListener('click', () => {
+        const isExpanded = item.classList.contains('expanded');
+        if (isExpanded) {
+          collapseItem(item);
+        } else {
+          // Collapse all others first (one-at-a-time)
+          stepItems.forEach(other => {
+            if (other !== item) collapseItem(other);
+          });
+          expandItem(item);
+        }
+        // Update expand-all button state
+        if (expandAllBtn) {
+          allExpanded = container.querySelectorAll('.step-item.expanded').length === stepItems.length;
+          expandAllBtn.textContent = allExpanded ? 'Collapse All' : 'Expand All';
+        }
+      });
+    });
+
+    if (expandAllBtn) {
+      expandAllBtn.addEventListener('click', () => {
+        allExpanded = !allExpanded;
+        if (allExpanded) {
+          stepItems.forEach(item => expandItem(item));
+          expandAllBtn.textContent = 'Collapse All';
+        } else {
+          collapseAll();
+          expandAllBtn.textContent = 'Expand All';
+        }
+      });
+    }
   }
 
   try {
@@ -48,45 +118,45 @@
       fetchWithRetry(`/api/recipes/${encodeURIComponent(id)}/steps`)
     ]);
 
-    document.title = `${recipe.name} — Pizza Mastery`;
+    document.title = `${recipe.name} \u2014 Pizza Mastery`;
 
     const imgHtml = recipe.image_url
       ? `<img class="recipe-hero-img" src="${recipe.image_url}" alt="${recipe.name}">`
-      : `<div class="recipe-hero-placeholder">🍕</div>`;
+      : `<div class="recipe-hero-placeholder">\uD83C\uDF55</div>`;
 
     const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0);
 
     const infoBar = `
       <div class="recipe-info-bar">
         <div class="info-item">
-          <span class="info-icon">🍕</span>
+          <span class="info-icon">\uD83C\uDF55</span>
           <span class="info-label">Type</span>
           <span class="info-value">${formatType(recipe.pizza_type)}</span>
         </div>
         <div class="info-item">
-          <span class="info-icon">🍽️</span>
+          <span class="info-icon">\uD83C\uDF7D\uFE0F</span>
           <span class="info-label">Style</span>
           <span class="info-value">${formatStyle(recipe.style)}</span>
         </div>
         <div class="info-item">
-          <span class="info-icon">⏱</span>
+          <span class="info-icon">\u23F1</span>
           <span class="info-label">Prep</span>
           <span class="info-value">${recipe.prep_time ?? '?'} min</span>
         </div>
         <div class="info-item">
-          <span class="info-icon">🔥</span>
+          <span class="info-icon">\uD83D\uDD25</span>
           <span class="info-label">Cook</span>
           <span class="info-value">${recipe.cook_time ?? '?'} min</span>
         </div>
         <div class="info-item">
-          <span class="info-icon">⏰</span>
+          <span class="info-icon">\u23F0</span>
           <span class="info-label">Total</span>
           <span class="info-value">${totalTime} min</span>
         </div>
         <div class="info-item">
-          <span class="info-icon">📊</span>
+          <span class="info-icon">\uD83D\uDCCA</span>
           <span class="info-label">Difficulty</span>
-          <span class="info-value ${diffClass(recipe.difficulty)}">${recipe.difficulty || '—'}</span>
+          <span class="info-value ${diffClass(recipe.difficulty)}">${recipe.difficulty || '\u2014'}</span>
         </div>
       </div>`;
 
@@ -104,20 +174,25 @@
       : '';
 
     const stepsHtml = steps.length
-      ? `<section class="recipe-section">
-          <h2 class="section-title">Step-by-Step Instructions</h2>
+      ? `<section class="recipe-section steps-section">
+          <div class="steps-section-header">
+            <h2 class="section-title">Step-by-Step Instructions</h2>
+            <button class="steps-expand-all" type="button">Expand All</button>
+          </div>
           <p class="steps-hint">Tap each step to expand details</p>
           <ol class="steps-list">
             ${steps.map(s => `
               <li class="step-item" data-step="${s.step_number}">
-                <div class="step-header">
+                <div class="step-header" role="button" aria-expanded="false" tabindex="0">
                   <div class="step-number">${s.step_number}</div>
-                  <div class="step-title">${s.title}</div>
-                  <div class="step-toggle">＋</div>
+                  <div class="step-title-text"><span class="step-label">Step ${s.step_number}:</span> ${s.title}</div>
+                  <div class="step-toggle" aria-hidden="true">\uFF0B</div>
                 </div>
-                <div class="step-body">
-                  <p class="step-desc">${s.description}</p>
-                  ${s.image_url ? `<img class="step-img" src="${s.image_url}" alt="Step ${s.step_number}: ${s.title}" loading="lazy">` : ''}
+                <div class="step-body" role="region">
+                  <div class="step-body-inner">
+                    <p class="step-desc">${s.description}</p>
+                    ${s.image_url ? `<img class="step-img" src="${s.image_url}" alt="Step ${s.step_number}: ${s.title}" loading="lazy">` : ''}
+                  </div>
                 </div>
               </li>`).join('')}
           </ol>
@@ -143,14 +218,9 @@
       ${ingredientsHtml}
       ${stepsHtml}`;
 
-    detail.querySelectorAll('.step-item').forEach(item => {
-      const body = item.querySelector('.step-body');
-      const toggle = item.querySelector('.step-toggle');
-      item.querySelector('.step-header').addEventListener('click', () => {
-        const expanded = item.classList.toggle('expanded');
-        toggle.textContent = expanded ? '－' : '＋';
-      });
-    });
+    if (steps.length) {
+      initStepAccordion(detail);
+    }
 
   } catch (e) {
     detail.innerHTML = '';
