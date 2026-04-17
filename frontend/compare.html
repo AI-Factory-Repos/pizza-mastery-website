@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compare — Pizza Mastery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="nav-logo">🍕 Pizza Mastery</a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="compare.html" class="nav-link active">Compare</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    <div class="container">
+      <div class="compare-header">
+        <h1 class="page-title">Side-by-Side Comparison</h1>
+        <div class="type-selector">
+          <label for="type-select">Pizza Type:</label>
+          <select id="type-select" class="type-select">
+            <option value="margherita">Margherita</option>
+            <option value="pepperoni">Pepperoni</option>
+            <option value="bbq_chicken">BBQ Chicken</option>
+          </select>
+        </div>
+      </div>
+      <div id="compare-grid" class="compare-grid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+      <div id="error-msg" class="error-msg hidden"></div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p>🔥 Crafted with passion &amp; wood-fired tradition</p>
+  </footer>
+
+  <script src="js/compare.js"></script>
+</body>
+</html>
