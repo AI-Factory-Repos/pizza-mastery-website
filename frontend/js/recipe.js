@@ -7,7 +7,10 @@
 
   if (!id) {
     detail.innerHTML = '';
-    errorMsg.textContent = 'No recipe specified.';
+    errorMsg.innerHTML = `
+      <div class="error-msg__icon">🫕</div>
+      <div class="error-msg__title">No recipe specified.</div>
+      <p class="error-msg__text"><a href="index.html">← Back to recipes</a></p>`;
     errorMsg.classList.remove('hidden');
     return;
   }
@@ -20,7 +23,7 @@
         return await res.json();
       } catch (e) {
         if (i === retries - 1) throw e;
-        await new Promise(r => setTimeout(r, 500 * (i + 1)));
+        await new Promise(r => setTimeout(r, 600 * (i + 1)));
       }
     }
   }
@@ -43,6 +46,28 @@
     return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }
 
+  function showDetailSkeleton() {
+    detail.innerHTML = `
+      <div class="skeleton-img"></div>
+      <div class="skeleton-detail">
+        <div class="skeleton-line skeleton-line--title"></div>
+        <div class="skeleton-line skeleton-line--short"></div>
+        <div class="skeleton-line skeleton-line--medium"></div>
+        <div class="skeleton-line skeleton-line--full"></div>
+        <div class="skeleton-line skeleton-line--full"></div>
+        <div class="skeleton-line skeleton-line--medium"></div>
+      </div>`;
+  }
+
+  function showLoadingSpinner(container) {
+    container.innerHTML = `
+      <div class="loading-spinner">
+        <span class="loading-spinner__icon">🍕</span>
+        <span class="loading-spinner__flame">🔥</span>
+        <p class="loading-spinner__text">Preparing your recipe…</p>
+      </div>`;
+  }
+
   function renderIngredients(ingredients) {
     if (!ingredients || !ingredients.length) {
       return '<p class="no-ingredients">No ingredients listed.</p>';
@@ -61,7 +86,7 @@
     }
     const items = steps.map(step => {
       const imgHtml = step.image_url
-        ? `<img class="step-img" src="${step.image_url}" alt="Step ${step.step_number}: ${step.title}" loading="lazy">`
+        ? `<img class="step-img" src="${step.image_url}" alt="Step ${step.step_number}: ${step.title}" loading="lazy" onerror="this.onerror=null;this.style.display='none';">`
         : '';
       return `
         <div class="step-item" data-step="${step.step_number}">
@@ -149,56 +174,84 @@
     }
   }
 
-  try {
-    const [recipe, steps] = await Promise.all([
-      fetchWithRetry(`/api/recipes/${encodeURIComponent(id)}`),
-      fetchWithRetry(`/api/recipes/${encodeURIComponent(id)}/steps`)
-    ]);
+  function showError(message, retryFn) {
+    detail.innerHTML = '';
+    errorMsg.innerHTML = `
+      <div class="error-msg__icon">🫕</div>
+      <div class="error-msg__title">Mamma mia! Something went wrong.</div>
+      <p class="error-msg__text">${message}</p>
+      ${retryFn ? '<button class="retry-btn" id="retry-btn">🔄 Retry</button>' : ''}`;
+    errorMsg.classList.remove('hidden');
+    if (retryFn) {
+      document.getElementById('retry-btn').addEventListener('click', () => {
+        errorMsg.classList.add('hidden');
+        errorMsg.innerHTML = '';
+        retryFn();
+      });
+    }
+  }
 
-    // Set page title
-    document.title = `${recipe.name} — Pizza Mastery`;
+  async function loadRecipe() {
+    showDetailSkeleton();
+    errorMsg.classList.add('hidden');
+    errorMsg.innerHTML = '';
 
-    // Wire up compare link
+    let recipe, steps;
+    try {
+      recipe = await fetchWithRetry(`/api/recipes/${encodeURIComponent(id)}`);
+    } catch (e) {
+      showError('Could not load the recipe. Please check your connection and try again.', loadRecipe);
+      return;
+    }
+
+    // Steps loading
+    const stepsContainer = document.createElement('div');
+    showLoadingSpinner(stepsContainer);
+
+    try {
+      steps = await fetchWithRetry(`/api/recipes/${encodeURIComponent(id)}/steps`);
+    } catch (e) {
+      steps = [];
+    }
+
     if (compareLink && recipe.pizza_type) {
       compareLink.href = `compare.html?type=${encodeURIComponent(recipe.pizza_type)}`;
       compareLink.classList.remove('hidden');
     }
 
     const imgHtml = recipe.image_url
-      ? `<img class="recipe-hero-img" src="${recipe.image_url}" alt="${recipe.name}">`
-      : `<div class="recipe-hero-img-placeholder">🍕</div>`;
+      ? `<img class="recipe-hero-img" src="${recipe.image_url}" alt="${recipe.name}" onerror="this.onerror=null;this.style.display='none';">`
+      : '';
 
     detail.innerHTML = `
       ${imgHtml}
-      <div class="recipe-detail-body">
-        <h1 class="recipe-detail-title">${recipe.name}</h1>
-        <div class="recipe-meta">
+      <div class="recipe-body">
+        <h1 class="recipe-title">${recipe.name}</h1>
+        <div class="recipe-meta-row">
           <span class="badge">${formatType(recipe.pizza_type)}</span>
           <span class="badge badge-style">${formatStyle(recipe.style)}</span>
-          <span class="${diffClass(recipe.difficulty)}">${recipe.difficulty || ''}</span>
         </div>
-        <div class="recipe-times">
+        <div class="recipe-times-row">
           <span>⏱ Prep: ${recipe.prep_time ?? '?'} min</span>
           <span>🔥 Cook: ${recipe.cook_time ?? '?'} min</span>
-          <span>⏳ Total: ${(recipe.prep_time || 0) + (recipe.cook_time || 0)} min</span>
+          <span class="${diffClass(recipe.difficulty)}">${recipe.difficulty || ''}</span>
         </div>
         ${recipe.description ? `<p class="recipe-description">${recipe.description}</p>` : ''}
-
-        <section class="recipe-section">
-          <h2 class="recipe-section-title">Ingredients</h2>
+        <section class="ingredients-section">
+          <h2 class="section-title">Ingredients</h2>
           ${renderIngredients(recipe.ingredients)}
         </section>
-
-        <section class="recipe-section">
-          <h2 class="recipe-section-title">Steps</h2>
-          ${renderSteps(steps)}
+        <section class="steps-section">
+          <h2 class="section-title">Steps</h2>
+          <div id="steps-container">${renderSteps(steps)}</div>
         </section>
       </div>`;
 
-    initStepAccordion(detail);
-  } catch (e) {
-    detail.innerHTML = '';
-    errorMsg.textContent = 'Could not load recipe. Please check your connection and try again.';
-    errorMsg.classList.remove('hidden');
+    const stepsEl = detail.querySelector('.steps-accordion');
+    if (stepsEl) {
+      initStepAccordion(detail.querySelector('.steps-section'));
+    }
   }
+
+  loadRecipe();
 })();
