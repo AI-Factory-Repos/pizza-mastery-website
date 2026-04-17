@@ -33,6 +33,11 @@
     return 'difficulty-medium';
   }
 
+  function formatBadge(str) {
+    if (!str) return '';
+    return str.replace(/_/g, ' ').replace(/-/g, ' ');
+  }
+
   function renderCard(r) {
     const imgHtml = r.image_url
       ? `<img class="recipe-card-img" src="${r.image_url}" alt="${r.name}" loading="lazy">`
@@ -43,8 +48,8 @@
         <div class="recipe-card-body">
           <h2 class="recipe-card-title">${r.name}</h2>
           <div class="recipe-meta">
-            <span class="badge">${r.pizza_type || ''}</span>
-            <span class="badge badge-style">${r.style || ''}</span>
+            <span class="badge">${formatBadge(r.pizza_type)}</span>
+            <span class="badge badge-style">${formatBadge(r.style)}</span>
           </div>
           <div class="recipe-times">
             <span>⏱ Prep: ${r.prep_time ?? '?'} min</span>
@@ -55,19 +60,23 @@
       </a>`;
   }
 
+  function showSkeletons(count = 6) {
+    grid.innerHTML = Array(count).fill('<div class="skeleton-card"></div>').join('');
+  }
+
   async function loadRecipes() {
-    grid.innerHTML = Array(6).fill('<div class="skeleton-card"></div>').join('');
+    showSkeletons();
     errorMsg.classList.add('hidden');
     try {
       const recipes = await fetchWithRetry(`/api/recipes${buildQueryString()}`);
       if (!recipes.length) {
-        grid.innerHTML = '<p style="color:var(--clr-ash);grid-column:1/-1;text-align:center;padding:2rem">No recipes found.</p>';
+        grid.innerHTML = '<p class="no-results">No recipes found for the selected filters.</p>';
         return;
       }
       grid.innerHTML = recipes.map(renderCard).join('');
     } catch (e) {
       grid.innerHTML = '';
-      errorMsg.textContent = 'Could not load recipes. Please try again.';
+      errorMsg.textContent = 'Could not load recipes. Please check your connection and try again.';
       errorMsg.classList.remove('hidden');
     }
   }
